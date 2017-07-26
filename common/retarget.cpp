@@ -50,6 +50,28 @@
 #   define PREFIX(x)    x
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <arm_compat.h>
+#include <rt_misc.h>
+#include <stdint.h>
+
+extern char Image$$ARM_LIB_HEAP$$ZI$$Limit[];
+
+void _sys_exit(int return_code)
+{
+
+}
+
+void _ttywrch(int ch)
+{
+
+}
+
+}
+
 using namespace mbed;
 
 #if defined(__MICROLIB) && (__ARMCC_VERSION>5030000)
@@ -424,7 +446,7 @@ extern "C" WEAK void mbed_sdk_init(void);
 extern "C" WEAK void mbed_sdk_init(void) {
 }
 
-#if defined(TOOLCHAIN_ARM)
+//#if defined(TOOLCHAIN_ARM)
 extern "C" int $Super$$main(void);
 
 extern "C" int $Sub$$main(void) {
@@ -432,32 +454,33 @@ extern "C" int $Sub$$main(void) {
     mbed_main();
     return $Super$$main();
 }
-#elif defined(TOOLCHAIN_GCC)
-extern "C" int __real_main(void);
 
-extern "C" int __wrap_main(void) {
-    mbed_sdk_init();
-    mbed_main();
-    return __real_main();
-}
-#elif defined(TOOLCHAIN_IAR)
+//#elif defined(TOOLCHAIN_GCC)
+//extern "C" int __real_main(void);
+
+//extern "C" int __wrap_main(void) {
+//    mbed_sdk_init();
+//    mbed_main();
+//    return __real_main();
+//}
+//#elif defined(TOOLCHAIN_IAR)
 // IAR doesn't have the $Super/$Sub mechanism of armcc, nor something equivalent
 // to ld's --wrap. It does have a --redirect, but that doesn't help, since redirecting
 // 'main' to another symbol looses the original 'main' symbol. However, its startup
 // code will call a function to setup argc and argv (__iar_argc_argv) if it is defined.
 // Since mbed doesn't use argc/argv, we use this function to call our mbed_main.
-extern "C" void __iar_argc_argv() {
-    mbed_sdk_init();
-    mbed_main();
-}
-#endif
+//extern "C" void __iar_argc_argv() {
+//    mbed_sdk_init();
+//    mbed_main();
+//}
+//#endif
 
 // Provide implementation of _sbrk (low-level dynamic memory allocation
 // routine) for GCC_ARM which compares new heap pointer with MSP instead of
 // SP.  This make it compatible with RTX RTOS thread stacks.
 #if defined(TOOLCHAIN_GCC_ARM)
 // Linker defined symbol used by _sbrk to indicate where heap should start.
-extern "C" int __end__;
+//extern "C" int __end__;
 
 #if defined(TARGET_CORTEX_A)
 extern "C" uint32_t  __HeapLimit;
@@ -465,17 +488,19 @@ extern "C" uint32_t  __HeapLimit;
 
 // Turn off the errno macro and use actual global variable instead.
 #undef errno
-extern "C" int errno;
+//extern "C" int errno;
+int errno;
 
 // For ARM7 only
 register unsigned char * stack_ptr __asm ("sp");
 
 // Dynamic memory allocation related syscall.
-extern "C" caddr_t _sbrk(int incr) {
-    static unsigned char* heap = (unsigned char*)&__end__;
+extern "C" void * _sbrk(int incr) {
+//    static unsigned char* heap = (unsigned char*)&__end__;
+    static unsigned char* heap = (unsigned char*)Image$$ARM_LIB_HEAP$$ZI$$Limit;
     unsigned char*        prev_heap = heap;
     unsigned char*        new_heap = heap + incr;
-
+ 
 #if defined(TARGET_ARM7)
     if (new_heap >= stack_ptr) {
 #elif defined(TARGET_CORTEX_A)
@@ -484,11 +509,11 @@ extern "C" caddr_t _sbrk(int incr) {
     if (new_heap >= (unsigned char*)__get_MSP()) {
 #endif
         errno = ENOMEM;
-        return (caddr_t)-1;
+        return (void *)-1;
     }
 
     heap = new_heap;
-    return (caddr_t) prev_heap;
+    return (void *) prev_heap;
 }
 #endif
 

@@ -43,6 +43,7 @@ expected to be copied into the application project folder prior to its use!
 #else
     .equ    Stack_Size, 2048
 #endif
+    .equ    __StackTop, 0x20004000
     .globl    __StackTop
     .globl    __StackLimit
 __StackLimit:
@@ -69,10 +70,12 @@ __HeapLimit:
     .size __HeapLimit, . - __HeapLimit
     
     .section .Vectors
+    .global __use_no_semihosting
     .align 2
     .globl __Vectors
 __Vectors:
-    .long    __StackTop            /* Top of Stack */
+    .long  Image$$ARM_LIB_STACK$$ZI$$Limit            /* Top of Stack */
+//    .long    __StackTop            /* Top of Stack */
     .long   Reset_Handler               /* Reset Handler */
     .long   NMI_Handler                 /* NMI Handler */
     .long   HardFault_Handler           /* Hard Fault Handler */
@@ -154,11 +157,12 @@ Reset_Handler:
  *      __data_start__/__data_end__: RAM address range that data should be
  *      copied to. Both must be aligned to 4 bytes boundary.  */
 
+/*
     ldr    r1, =__etext
     ldr    r2, =__data_start__
     ldr    r3, =__data_end__
 
-    subs    r3, r2
+    subs    r3, r3, r2
     ble     .LC0
 
 .LC1:
@@ -167,10 +171,10 @@ Reset_Handler:
     str    r0, [r2,r3]
     bgt    .LC1
 .LC0:
-    
+ */   
     LDR     R0, =SystemInit
     BLX     R0
-    LDR     R0, =_start
+    LDR     R0, =__main
     BX      R0
 
     .pool
