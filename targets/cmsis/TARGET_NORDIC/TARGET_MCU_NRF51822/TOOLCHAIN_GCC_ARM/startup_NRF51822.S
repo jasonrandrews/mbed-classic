@@ -36,6 +36,7 @@ expected to be copied into the application project folder prior to its use!
     .syntax unified
     .arch armv6-m
 
+/*
     .section .stack
     .align 3
 #ifdef __STACK_SIZE
@@ -68,6 +69,7 @@ __HeapBase:
     .size __HeapBase, . - __HeapBase
 __HeapLimit:
     .size __HeapLimit, . - __HeapLimit
+*/
     
     .section .Vectors
     .global __use_no_semihosting
